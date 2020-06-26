@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     else if (std::string(argv[2]) == "edge_detect") {
         filterType = FilterType::EDGE_DETECTION;
     }
-     else if (std::string(argv[2]) == "alt_edge_detect") {
+    else if (std::string(argv[2]) == "alt_edge_detect") {
         filterType = FilterType::ALT_EDGE_DETECTION;
     }
     else {
@@ -58,11 +58,12 @@ int main(int argc, char *argv[])
             break;
 
         case FilterType::EDGE_DETECTION:
-            filter.setEdgeDetectionFilter(3, 3, -4, 1);
+            filter.setEdgeDetectionFilter(3, 3, 8, -1);
             break;
 
         case FilterType::ALT_EDGE_DETECTION:
-            filter.setAltEdgeDetectionFilter(3, 3, 8, -1);
+            filter.setAltEdgeDetectionFilter(3, 3, -4, 1);
+            break;
 
         default:
             std::cerr << "Unable to find requested filter, switching to gaussian..." << std::endl;
