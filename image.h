@@ -1,5 +1,5 @@
 #include <vector>
-#include <assert.h>
+#include <thread>
 #include "types.h"
 #include "kernel.h"
 
@@ -74,6 +74,8 @@ class Image
          */
         bool applyFilter(const Kernel& kernel);
 
+        bool multithreadFiltering(Image& resultingImage, const Kernel& kernel, int threadsNumber);
+
     private:
         /*
          * @brief: A common method to apply the kernel to the image
@@ -84,10 +86,9 @@ class Image
          * @brief: return a padded matrix using matrix state 
          *          and requested padding
          */
-        MatrixChannels buildPaddedImage(const int startingHeight, 
-                                        const int startingWidth,
-                                        const int paddingHeight,
+        MatrixChannels buildPaddedImage(const int paddingHeight,
                                         const int paddingWidth) const;
 
         MatrixChannels m_image;
+        std::vector<std::thread> m_threads;
 };

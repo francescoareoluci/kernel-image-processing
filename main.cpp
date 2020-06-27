@@ -1,5 +1,6 @@
 #include <iostream>
 #include "image.h"
+#include <chrono>
 
 #define GAUSSIAN_FILTER_COMMAND         "gaussian";
 #define SHARPENING_FILTER_COMMAND       "sharpen";
@@ -43,14 +44,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Image image;
-    image.loadImage(argv[1]);
+    Image* image1 = new Image();
+    Image* image2 = new Image();
+    Image* image3 = new Image();
+    Image* image4 = new Image();
+    Image* image5 = new Image();
+    Image* image6 = new Image();
+    Image* image7 = new Image();
+    Image* image8 = new Image();
+
+    int threadNumber = 8;
+    
+    //image.loadImage(argv[1]);
+    std::vector<Image*> images;
+    
+        image1->loadImage("images/1.png");    
+        images.push_back(image1);
+        image2->loadImage("images/2.png");    
+        images.push_back(image2);
+        image3->loadImage("images/3.png");    
+        images.push_back(image3);
+        image4->loadImage("images/4.png");    
+        images.push_back(image4);
+        image5->loadImage("images/5.png");    
+        images.push_back(image5);
+        image6->loadImage("images/6.png");    
+        images.push_back(image6);
+        image7->loadImage("images/7.png");    
+        images.push_back(image7);
+        image8->loadImage("images/8.png");    
+        images.push_back(image8);
 
     Kernel filter = Kernel();
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(5, 5, 2);
+            filter.setGaussianFilter(55, 55, 2);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -73,7 +102,28 @@ int main(int argc, char *argv[])
     filter.printKernel();
 
     Image resultingImage; 
-    image.applyFilter(resultingImage, filter);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 8; i++)
+    {
+        images[0]->multithreadFiltering(resultingImage, filter, threadNumber);
+        //images[0]->applyFilter(resultingImage, filter);
+    }
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    auto t3 = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 8; i++)
+    {
+        images[0]->applyFilter(resultingImage, filter);
+    }
+    auto t4 = std::chrono::high_resolution_clock::now();
+
+    auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>( t4 - t3 ).count();
+
+    std::cout << "Multithread Execution time: " << multithreadDuration
+              << " with threads: " << threadNumber << std::endl;
+
+    std::cout << "Single thread Execution time: " << singleDuration << std::endl;
 
     resultingImage.saveImage("result.png");
 
