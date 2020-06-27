@@ -55,8 +55,19 @@ class Kernel
          */
         bool setAltEdgeDetectionFilter(int height, int width, int max, int min);
 
+        /*
+         * @brief: return the kernel width
+         */
         int getKernelWidth() const;
+
+        /*
+         * @brief: return the kernel height
+         */
         int getKernelHeight() const;
+
+        /*
+         * @brief: return the kernel as a matrix
+         */
         Matrix getKernel() const;
 
     private:

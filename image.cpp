@@ -24,6 +24,11 @@ bool Image::setImage(const MatrixChannels& source)
     this->m_image = source;
 }
 
+MatrixChannels Image::getImage() const
+{
+    return this->m_image;
+}
+
 bool Image::loadImage(const char *filename)
 {
     // Load image
@@ -76,6 +81,32 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
 {
     std::cout << "Applying filter to image" << std::endl;
 
+    MatrixChannels newImage = applyFilterCommon(kernel);
+
+    resultingImage.setImage(newImage);
+    std::cout << "Done!" << std::endl;
+
+    return true;
+}
+
+bool Image::applyFilter(const Kernel& kernel)
+{
+    std::cout << "Applying filter to image" << std::endl;
+    
+    MatrixChannels newImage = applyFilterCommon(kernel);
+    if (newImage.empty()) {
+        return false;
+    }
+
+    this->setImage(newImage);
+
+    std::cout << "Done!" << std::endl;
+
+    return true;
+}
+
+MatrixChannels Image::applyFilterCommon(const Kernel& kernel) const
+{
     // Get image dimensions
     int channels = this->getImageChannels();
     int height = this->getImageHeight();
@@ -87,28 +118,25 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
 
     // Checking image channels and kernel size
     if (channels != 3) {
-        // TODO
-        return false;
+        std::cerr << "Invalid number of image's channels" << std::endl;
+        return MatrixChannels();
     }
 
     if (filterHeight == 0 || filterWidth == 0) {
-        // TODO
-        return false;
+        std::cerr << "Invalid filter dimension" << std::endl;
+        return MatrixChannels();
     }
 
-    // TODO: input padding w.r.t. filter size
+    // Input padding w.r.t. filter size
     MatrixChannels paddedImage = buildPaddedImage(height, width, filterHeight, filterWidth);
 
-    // Build final image dimensions
-    int newImageHeight = height;
-    int newImageWidth = width;
-
-    MatrixChannels newImage(channels, Matrix(newImageHeight, Array(newImageWidth)));
+    MatrixChannels newImage(channels, Matrix(height, Array(width)));
     Matrix mask = kernel.getKernel();
 
+    // Apply convolution
     for (int d = 0; d < channels; d++) {
-        for (int i = 0; i < newImageHeight; i++) {
-            for (int j = 0; j < newImageWidth; j++) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
                 for (int h = i;  h < i + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
                         newImage[d][i][j] += mask[h - i][w - j] * paddedImage[d][h][w];
@@ -118,10 +146,7 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
         }
     }
 
-    resultingImage.setImage(newImage);
-    std::cout << "Done!" << std::endl;
-
-    return true;
+    return newImage;
 }
 
 MatrixChannels Image::buildPaddedImage(const int startingHeight, 
