@@ -2,9 +2,9 @@
 #include "image.h"
 
 
-void threadConv(const MatrixChannels& sourceImage, 
+void threadConv(const std::vector<double>& sourceImage, 
                 int startLine, int stopLine,
-                MatrixChannels& outImage, 
+                std::vector<double>& outImage, 
                 const Matrix& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
                 int threadsNumber);
@@ -16,25 +16,28 @@ Image::Image()
 
 int Image::getImageWidth() const
 {
-    return m_image[0][0].size();
+    return m_imageWidth;
 }
 
 int Image::getImageHeight() const
 {
-    return m_image[0].size();
+    return m_imageHeight;
 }
 
 int Image::getImageChannels() const
 {
-    return m_image.size();
+    //return m_image.size();
+    return 1;
 }
 
-bool Image::setImage(const MatrixChannels& source)
+bool Image::setImage(const std::vector<double>& source, int width, int height)
 {
     this->m_image = source;
+    this->m_imageWidth = width;
+    this->m_imageHeight = height;
 }
 
-MatrixChannels Image::getImage() const
+std::vector<double> Image::getImage() const
 {
     return this->m_image;
 }
@@ -45,11 +48,15 @@ bool Image::loadImage(const char *filename)
     png::image<png::gray_pixel> image(filename);
 
     // Build matrix from image
-    MatrixChannels imageMatrix(1, Matrix(image.get_height(), Array(image.get_width())));
+    //MatrixChannels imageMatrix(1, Matrix(image.get_height(), Array(image.get_width())));
+    
+    m_imageHeight = image.get_height();
+    m_imageWidth = image.get_width();
+    std::vector<double> imageMatrix(m_imageHeight * m_imageWidth);
     
     for (int h = 0; h < image.get_height(); h++) {
         for (int w = 0; w < image.get_width(); w++) {
-            imageMatrix[0][h][w] = image[h][w];
+            imageMatrix[w + h * m_imageWidth] = image[h][w];
             //imageMatrix[1][h][w] = image[h][w].green;
             //imageMatrix[2][h][w] = image[h][w].blue;
         }
@@ -62,11 +69,11 @@ bool Image::loadImage(const char *filename)
 
 bool Image::saveImage(const char *filename) const
 {
-    if (m_image.size() != 1)
-    {
-        std::cerr << "Unable to save image" << std::endl;
-        return false;
-    }
+    //if (m_image.size() != 1)
+    //{
+    //    std::cerr << "Unable to save image" << std::endl;
+    //    return false;
+    //}
 
     int height = this->getImageHeight();
     int width = this->getImageWidth();
@@ -75,7 +82,7 @@ bool Image::saveImage(const char *filename) const
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            imageFile[y][x] = m_image[0][y][x];
+            imageFile[y][x] = m_image[x + y * width];
             //imageFile[y][x].green = m_image[1][y][x];
             //imageFile[y][x].blue = m_image[2][y][x];
         }
@@ -91,9 +98,9 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
 {
     std::cout << "Applying filter to image" << std::endl;
 
-    MatrixChannels newImage = applyFilterCommon(kernel);
+    std::vector<double> newImage = applyFilterCommon(kernel);
 
-    resultingImage.setImage(newImage);
+    resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
     std::cout << "Done!" << std::endl;
 
     return true;
@@ -103,19 +110,19 @@ bool Image::applyFilter(const Kernel& kernel)
 {
     std::cout << "Applying filter to image" << std::endl;
     
-    MatrixChannels newImage = applyFilterCommon(kernel);
+    std::vector<double> newImage = applyFilterCommon(kernel);
     if (newImage.empty()) {
         return false;
     }
 
-    this->setImage(newImage);
+    this->setImage(newImage, m_imageWidth, m_imageHeight);
 
     std::cout << "Done!" << std::endl;
 
     return true;
 }
 
-MatrixChannels Image::applyFilterCommon(const Kernel& kernel) const
+std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
 {
     // Get image dimensions
     int channels = this->getImageChannels();
@@ -129,22 +136,24 @@ MatrixChannels Image::applyFilterCommon(const Kernel& kernel) const
     // Checking image channels and kernel size
     if (channels != 1) {
         std::cerr << "Invalid number of image's channels" << std::endl;
-        return MatrixChannels();
+        return std::vector<double>();
     }
 
     if (filterHeight == 0 || filterWidth == 0) {
         std::cerr << "Invalid filter dimension" << std::endl;
-        return MatrixChannels();
+        return std::vector<double>();
     }
 
     // Input padding w.r.t. filter size
-    MatrixChannels paddedImage = buildPaddedImage(filterHeight, filterWidth);
+    //MatrixChannels paddedImage = buildPaddedImage(filterHeight, filterWidth);
+    std::vector<double> paddedImage = buildPaddedImage(filterHeight, filterWidth);
+    std::vector<double> newImage(height * width);
 
-    MatrixChannels newImage(channels, Matrix(height, Array(width)));
     Matrix mask = kernel.getKernel();
 
     int hOffset = int(filterHeight / 2) + 1;
     int wOffset = int(filterWidth / 2) + 1;
+    int paddedWidth = width + (filterWidth * 2) - 1;
 
     // Apply convolution
     for (int d = 0; d < channels; d++) {
@@ -152,7 +161,7 @@ MatrixChannels Image::applyFilterCommon(const Kernel& kernel) const
             for (int j = 0; j < width; j++) {
                 for (int h = i;  h < i + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
-                        newImage[d][i][j] += mask[h - i][w - j] * paddedImage[d][h + hOffset][w + wOffset];
+                        newImage[j + i * width] += mask[h - i][w - j] * paddedImage[(w + wOffset) + (h + hOffset) * paddedWidth];
                     }
                 }
             }
@@ -176,8 +185,9 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     int filterWidth = kernel.getKernelWidth();
 
     // Input padding w.r.t. filter size
-    MatrixChannels paddedImage = buildPaddedImage(filterHeight, filterWidth);
-    MatrixChannels newImage(channels, Matrix(height, Array(width)));
+    std::vector<double> paddedImage = buildPaddedImage(filterHeight, filterWidth);
+    std::vector<double> newImage(height * width);
+
     Matrix mask = kernel.getKernel();
     int startLine = 0;
     int stopLine = 0;
@@ -213,22 +223,23 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
         m_threads[i].join();
     }
 
-    resultingImage.setImage(newImage);
+    resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
 
     std::cout << "Done!" << std::endl;
     
     return true;
 }
 
-void threadConv(const MatrixChannels& sourceImage, 
+void threadConv(const std::vector<double>& sourceImage, 
                 int startLine, int stopLine, 
-                MatrixChannels& outImage, 
+                std::vector<double>& outImage, 
                 const Matrix& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
                 int threadsNumber)
 {
     int hOffset = int(filterHeight / 2) + 1;
     int wOffset = int(filterWidth / 2) + 1;
+    int paddedWidth = width + (filterWidth * 2) - 1;
 
     // Apply convolution
     for (int d = 0; d < channels; d++) {
@@ -236,7 +247,8 @@ void threadConv(const MatrixChannels& sourceImage,
             for (int j = 0; j < width; j++) {
                 for (int h = l;  h < l + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
-                        outImage[d][l][j] += mask[h - l][w - j] * sourceImage[d][h + hOffset][w + wOffset];
+                        //outImage[d][l][j] += mask[h - l][w - j] * sourceImage[d][h + hOffset][w + wOffset];
+                        outImage[j + l * width] += mask[h - l][w - j] * sourceImage[(w + wOffset) + (h + hOffset) * paddedWidth];
                     }
                 }
             }
@@ -244,26 +256,30 @@ void threadConv(const MatrixChannels& sourceImage,
     }
 }
 
-MatrixChannels Image::buildPaddedImage(const int paddingHeight,
-                                        const int paddingWidth) const
+std::vector<double> Image::buildPaddedImage(const int paddingHeight,
+                                            const int paddingWidth) const
 {
     int height = this->getImageHeight();
     int width = this->getImageWidth();
     bool first = true;
-    MatrixChannels paddedImage(1, Matrix(height + (paddingHeight * 2) - 1, 
-                                        Array(width + (paddingWidth * 2) - 1)));
 
-    for (int h = 0; h < paddedImage[0].size(); h++) {
-        for (int w = 0; w < paddedImage[0][0].size(); w++) {
+    int paddedHeight = height + (paddingHeight * 2) - 1;
+    int paddedWidth = width + (paddingWidth * 2) - 1;
+
+    std::vector<double> paddedImage(paddedHeight * paddedWidth);
+
+    for (int h = 0; h < paddedHeight; h++) {
+        for (int w = 0; w < paddedWidth; w++) {
             if ((h < paddingHeight) || (w < paddingWidth) || 
                 (h > height + paddingHeight - 1) || 
                 (w > width + paddingWidth - 1)) {
-                paddedImage[0][h][w] = 0.0;
+                paddedImage[w + h* paddedWidth] = 0.0;
                 //paddedImage[1][h][w] = 0.0;
                 //paddedImage[2][h][w] = 0.0;
             }
             else {
-                paddedImage[0][h][w] = this->m_image[0][h - paddingHeight][w - paddingWidth];
+                paddedImage[w + h * paddedWidth] = this->m_image[(w - paddingWidth) + (h - paddingHeight) * m_imageWidth];
+                //paddedImage[0][h][w] = this->m_image[0][h - paddingHeight][w - paddingWidth];
                 //paddedImage[1][h][w] = this->m_image[1][h][w];
                 //paddedImage[2][h][w] = this->m_image[2][h][w];
             }

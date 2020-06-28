@@ -13,7 +13,7 @@ class Image
          */ 
         ~Image() {
             m_image.clear();
-            MatrixChannels().swap(m_image);
+            std::vector<double>().swap(m_image);
         }
 
         /*
@@ -32,19 +32,19 @@ class Image
         int getImageChannels() const;
 
         /*
-         * @brief: set the image given another MatrixChannel
+         * @brief: set the image given another linearized vector
          * 
          * @params: source: the matrix to be set as state
          * @return: true is successfull, false otherwise
          */
-        bool setImage(const MatrixChannels& source);
+        bool setImage(const std::vector<double>& source, int width, int height);
 
         /*
          * @brief: return the matrix state
          * 
          * @return: the matrix state
          */
-        MatrixChannels getImage() const;
+        std::vector<double> getImage() const;
 
         /*
          * @brief: load an image from filename path
@@ -88,15 +88,17 @@ class Image
         /*
          * @brief: A common method to apply the kernel to the image
          */
-        MatrixChannels applyFilterCommon(const Kernel& kernel) const;
+        std::vector<double> applyFilterCommon(const Kernel& kernel) const;
 
         /*
          * @brief: return a padded matrix using matrix state 
          *          and requested padding
          */
-        MatrixChannels buildPaddedImage(const int paddingHeight,
+        std::vector<double> buildPaddedImage(const int paddingHeight,
                                         const int paddingWidth) const;
 
-        MatrixChannels m_image;
+        std::vector<double> m_image;
+        int m_imageWidth;
+        int m_imageHeight;
         std::vector<std::thread> m_threads;
 };
