@@ -5,7 +5,7 @@
 void threadConv(const std::vector<double>& sourceImage, 
                 int startLine, int stopLine,
                 std::vector<double>& outImage, 
-                const Matrix& mask,
+                const std::vector<double>& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
                 int threadsNumber);
 
@@ -47,9 +47,7 @@ bool Image::loadImage(const char *filename)
     // Load image
     png::image<png::gray_pixel> image(filename);
 
-    // Build matrix from image
-    //MatrixChannels imageMatrix(1, Matrix(image.get_height(), Array(image.get_width())));
-    
+    // Build matrix from image    
     m_imageHeight = image.get_height();
     m_imageWidth = image.get_width();
     std::vector<double> imageMatrix(m_imageHeight * m_imageWidth);
@@ -145,11 +143,10 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
     }
 
     // Input padding w.r.t. filter size
-    //MatrixChannels paddedImage = buildPaddedImage(filterHeight, filterWidth);
     std::vector<double> paddedImage = buildPaddedImage(filterHeight, filterWidth);
     std::vector<double> newImage(height * width);
 
-    Matrix mask = kernel.getKernel();
+    std::vector<double> mask = kernel.getKernel();
 
     int hOffset = int(filterHeight / 2) + 1;
     int wOffset = int(filterWidth / 2) + 1;
@@ -161,13 +158,15 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
             for (int j = 0; j < width; j++) {
                 for (int h = i;  h < i + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
-                        newImage[j + i * width] += mask[h - i][w - j] * paddedImage[(w + wOffset) + (h + hOffset) * paddedWidth];
+                        newImage[j + i * width] += mask[(w - j) + (h - i) * filterWidth] * 
+                                                    paddedImage[(w + wOffset) + (h + hOffset) * paddedWidth];
                     }
                 }
             }
         }
     }
-
+    paddedImage.clear();
+    
     return newImage;
 }
 
@@ -188,7 +187,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     std::vector<double> paddedImage = buildPaddedImage(filterHeight, filterWidth);
     std::vector<double> newImage(height * width);
 
-    Matrix mask = kernel.getKernel();
+    std::vector<double> mask = kernel.getKernel();
     int startLine = 0;
     int stopLine = 0;
 
@@ -223,6 +222,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
         m_threads[i].join();
     }
 
+    paddedImage.clear();
     resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
 
     std::cout << "Done!" << std::endl;
@@ -233,7 +233,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
 void threadConv(const std::vector<double>& sourceImage, 
                 int startLine, int stopLine, 
                 std::vector<double>& outImage, 
-                const Matrix& mask,
+                const std::vector<double>& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
                 int threadsNumber)
 {
@@ -248,7 +248,8 @@ void threadConv(const std::vector<double>& sourceImage,
                 for (int h = l;  h < l + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
                         //outImage[d][l][j] += mask[h - l][w - j] * sourceImage[d][h + hOffset][w + wOffset];
-                        outImage[j + l * width] += mask[h - l][w - j] * sourceImage[(w + wOffset) + (h + hOffset) * paddedWidth];
+                        outImage[j + l * width] += mask[(w - j) + (h - l) * filterWidth] * 
+                                                    sourceImage[(w + wOffset) + (h + hOffset) * paddedWidth];
                     }
                 }
             }
@@ -285,24 +286,6 @@ std::vector<double> Image::buildPaddedImage(const int paddingHeight,
             }
         }
     }
-
-    /*
-    int pheight = paddedImage[0].size();
-    int pwidth = paddedImage[0][0].size();
-
-    png::image<png::gray_pixel> imageFile(pwidth, pheight);
-
-    for (int y = 0; y < pheight; y++) {
-        for (int x = 0; x < pwidth; x++) {
-            imageFile[y][x] = paddedImage[0][y][x];
-            //imageFile[y][x].green = m_image[1][y][x];
-            //imageFile[y][x].blue = m_image[2][y][x];
-        }
-    }
-    imageFile.write("padded.png");
-
-    std::cout << "Image saved in " << std::string("padded.png") << std::endl;
-    */
 
     return paddedImage;
 }

@@ -7,8 +7,8 @@ Kernel::Kernel()
 
 void Kernel::printKernel() const
 {
-    int height = this->getKernelWidth();
-    int width = this->getKernelHeight();
+    int height = m_filterHeight;
+    int width = m_filterWidth;
 
     if (height == 0 || width == 0)
     {
@@ -19,7 +19,7 @@ void Kernel::printKernel() const
     std::cout << "=== Kernel ===" << std::endl;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            std::cout << m_filterMatrix[i][j] << " ";
+            std::cout << m_filterMatrix[j + i * width] << " ";
         }   
         std::cout << "" << std::endl; 
     }
@@ -30,9 +30,6 @@ void Kernel::printKernel() const
 bool Kernel::setGaussianFilter(const int height, const int width, const double stdDev)
 {
     std::cout << "Building gaussian filter..." << std::endl;
-
-    Matrix kernel(height, Array(width));
-    double sum = 0.0;
 
     if (height != width || height % 2 == 0 || width % 2 == 0) {
         std::cerr << "Height and Width values are not valid" << std::endl;
@@ -48,24 +45,30 @@ bool Kernel::setGaussianFilter(const int height, const int width, const double s
         return false;
     }
 
+    std::vector<double> kernel(width * height);
+    double sum = 0.0;
+
     int middleHeight = int(height / 2);
     int middleWidth = int(width / 2);
 
     for (int i = -middleHeight; i <= middleHeight; i++) {
         for (int j = -middleWidth; j <= middleWidth; j++) {
-            kernel[i + middleHeight][j + middleWidth] = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / 
-                                                            (2 * M_PI * stdDev * stdDev);
-            sum += kernel[i + middleHeight][j + middleWidth];
+            double cellValue = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / (2 * M_PI * stdDev * stdDev);
+            kernel[(j + middleWidth) + ( i + middleHeight) * width] = cellValue;
+            sum += cellValue;
         }
     }
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            kernel[i][j] /= sum;
+            kernel[j + i * width] /= sum;
         }
     }
 
     m_filterMatrix = kernel;
+    m_filterWidth = width;
+    m_filterHeight = height;
+
     return true;
 }
 
@@ -83,15 +86,18 @@ bool Kernel::setSharpenFilter(int height, int width, int max, int min)
         return false;
     }
 
-    Matrix kernel(height, Array(width));
-    this->buildKernelCommon(kernel, max, min);
+    std::vector<double> kernel(width * height);
+    this->buildKernelCommon(kernel, max, min, height, width);
 
-    kernel[0][0] = 0;
-    kernel[0][width -1] = 0;
-    kernel[height -1][0] = 0;
-    kernel[height -1][width -1] = 0;
+    kernel[0] = 0.0;
+    kernel[width - 1] = 0.0;
+    kernel[height - 1] = 0.0;
+    kernel[kernel.size() - 1] = 0.0;
 
     m_filterMatrix = kernel;
+    m_filterWidth = width;
+    m_filterHeight = height;
+
     return true;
 }
 
@@ -109,10 +115,13 @@ bool Kernel::setEdgeDetectionFilter(int height, int width, int max, int min)
         return false;
     }
 
-    Matrix kernel(height, Array(width));
-    this->buildKernelCommon(kernel, max, min);
+    std::vector<double> kernel(height * width);
+    this->buildKernelCommon(kernel, max, min, height, width);
 
     m_filterMatrix = kernel;
+    m_filterWidth = width;
+    m_filterHeight = height;
+
     return true;
 }
 
@@ -130,30 +139,30 @@ bool Kernel::setAltEdgeDetectionFilter(int height, int width, int max, int min)
     //    return false;
     //}
 
-    Matrix kernel(height, Array(width));
-    this->buildKernelCommon(kernel, max, min);
+    std::vector<double> kernel(height * width);
+    this->buildKernelCommon(kernel, max, min, height, width);
 
-    kernel[0][0] = 0;
-    kernel[0][width -1] = 0;
-    kernel[height -1][0] = 0;
-    kernel[height -1][width -1] = 0;
+    kernel[0] = 0.0;
+    kernel[width - 1] = 0.0;
+    kernel[height - 1] = 0.0;
+    kernel[kernel.size() - 1] = 0.0;
 
     m_filterMatrix = kernel;
+    m_filterWidth = width;
+    m_filterHeight = height;
+
     return true;
 }
 
-bool Kernel::buildKernelCommon(Matrix &kernel, int max, int min)
+bool Kernel::buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width)
 {
-    int height = kernel.size();
-    int width = kernel[0].size();
-
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if ((i == int(height / 2)) && (j == int(width / 2))) {
-                kernel[i][j] = max;
+                kernel[j + i * width] = max;
             }
             else {
-                kernel[i][j] = min;
+                kernel[j + i * width] = min;
             }
         }
     }
@@ -163,15 +172,15 @@ bool Kernel::buildKernelCommon(Matrix &kernel, int max, int min)
 
 int Kernel::getKernelWidth() const 
 {
-    return m_filterMatrix[0].size();
+    return m_filterWidth;
 }
         
 int Kernel::getKernelHeight() const
 {
-    return m_filterMatrix.size();
+    return m_filterHeight;
 }
 
-Matrix Kernel::getKernel() const
+std::vector<double> Kernel::getKernel() const
 {
     return this->m_filterMatrix;
 }

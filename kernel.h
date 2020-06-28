@@ -1,6 +1,5 @@
 #include <vector>
-#include <assert.h>
-#include "types.h"
+
 
 class Kernel 
 {
@@ -12,7 +11,7 @@ class Kernel
          */ 
         ~Kernel() {
             m_filterMatrix.clear();
-            Matrix().swap(m_filterMatrix);
+            std::vector<double>().swap(m_filterMatrix);
         }
 
         /*
@@ -76,13 +75,15 @@ class Kernel
         /*
          * @brief: return the kernel as a matrix
          */
-        Matrix getKernel() const;
+        std::vector<double> getKernel() const;
 
     private:
         /*
          * @brief: A common method to build the kernel
          */
-        bool buildKernelCommon(Matrix &kernel, int max, int min);
+        bool buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width);
 
-        Matrix m_filterMatrix;
+        std::vector<double> m_filterMatrix;
+        int m_filterWidth;
+        int m_filterHeight;
 };

@@ -1,7 +1,7 @@
 #include <vector>
 #include <thread>
-#include "types.h"
 #include "kernel.h"
+
 
 class Image
 {
