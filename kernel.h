@@ -8,6 +8,14 @@ class Kernel
         Kernel();
 
         /*
+         *  @brief: Dtor
+         */ 
+        ~Kernel() {
+            m_filterMatrix.clear();
+            Matrix().swap(m_filterMatrix);
+        }
+
+        /*
          * @brief: Print the kernel in the command line
          */
         void printKernel() const;

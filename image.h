@@ -9,6 +9,14 @@ class Image
         Image();
 
         /*
+         *  @brief: Dtor
+         */ 
+        ~Image() {
+            m_image.clear();
+            MatrixChannels().swap(m_image);
+        }
+
+        /*
          * @brief: get loaded image width
          */ 
         int getImageWidth() const;
