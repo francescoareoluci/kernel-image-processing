@@ -124,11 +124,11 @@ bool Kernel::setAltEdgeDetectionFilter(int height, int width, int max, int min)
         return false;
     }
 
-    if (min <= 0 || max >= 0) {
-        std::cerr << "Max and min value are not valid" << std::endl;
-        std::cerr << "Max value must be negative and min value must be positive" << std::endl;
-        return false;
-    }
+    //if (min <= 0 || max >= 0) {
+    //    std::cerr << "Max and min value are not valid" << std::endl;
+    //    std::cerr << "Max value must be negative and min value must be positive" << std::endl;
+    //    return false;
+    //}
 
     Matrix kernel(height, Array(width));
     this->buildKernelCommon(kernel, max, min);

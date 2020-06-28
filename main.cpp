@@ -8,8 +8,9 @@
 #define ALT_EDGE_DETECTION_FILTER_COMMAND   "alt_edge_detect"
 
 #define SOURCE_FOLDER   "images/"
+#define OUTPUT_FOLDER   "output/"
 #define IMAGE_EXT       ".png"
-#define IMAGES_NUMBER   16
+#define IMAGES_NUMBER   1
 #define THREAD_NUMBER   16
 
 enum class FilterType
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(25, 25, 2);
+            filter.setGaussianFilter(5, 5, 2);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
             break;
 
         case FilterType::ALT_EDGE_DETECTION:
-            filter.setAltEdgeDetectionFilter(3, 3, -4, 1);
+            filter.setAltEdgeDetectionFilter(3, 3, 4, -1);
             break;
 
         default:
@@ -89,19 +90,22 @@ int main(int argc, char *argv[])
     }
     filter.printKernel();
 
-    Image resultingImage; 
+    std::vector<Image*> resultingMTImages;
+    std::vector<Image*> resultingNPImages;
 
     // Executing multithread filtering for each image
     auto t1 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < IMAGES_NUMBER; i++) {
-        images[i]->multithreadFiltering(resultingImage, filter, THREAD_NUMBER);
+        resultingMTImages.push_back(new Image());
+        images[i]->multithreadFiltering(*resultingMTImages[i], filter, THREAD_NUMBER);
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
     // Executing non-parallel filtering for each image
     auto t3 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < IMAGES_NUMBER; i++) {
-        images[i]->applyFilter(resultingImage, filter);
+        resultingNPImages.push_back(new Image());
+        images[i]->applyFilter(*resultingNPImages[i], filter);
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
@@ -114,7 +118,17 @@ int main(int argc, char *argv[])
 
     std::cout << "Single thread Execution time: " << singleDuration << std::endl;
 
-    resultingImage.saveImage("result.png");
+    for (int i = 0; i < resultingMTImages.size(); i++) {
+        resultingMTImages[i]->saveImage(std::string(std::string(OUTPUT_FOLDER) + 
+                                        std::to_string(i) + "_" + std::string(argv[2]) +
+                                        std::string(IMAGE_EXT)).c_str());
+    }
+
+    //filter.setGaussianFilter(5, 5, 5);
+    //images[0]->applyFilter(filter);
+    //filter.setAltEdgeDetectionFilter(3, 3, -4, 1);
+    //images[0]->applyFilter(filter);
+    //images[0]->saveImage("result.png");
 
     return 0;    
 }

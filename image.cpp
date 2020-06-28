@@ -143,13 +143,16 @@ MatrixChannels Image::applyFilterCommon(const Kernel& kernel) const
     MatrixChannels newImage(channels, Matrix(height, Array(width)));
     Matrix mask = kernel.getKernel();
 
+    int hOffset = int(filterHeight / 2) + 1;
+    int wOffset = int(filterWidth / 2) + 1;
+
     // Apply convolution
     for (int d = 0; d < channels; d++) {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 for (int h = i;  h < i + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
-                        newImage[d][i][j] += mask[h - i][w - j] * paddedImage[d][h + int(filterHeight/2) + 1][w + int(filterWidth/2) + 1];
+                        newImage[d][i][j] += mask[h - i][w - j] * paddedImage[d][h + hOffset][w + wOffset];
                     }
                 }
             }
@@ -180,11 +183,16 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     int stopLine = 0;
 
     for (int i = 0; i < threadsNumber; i++) {
+        // If more thread than images row are requested
+        if (i > height) {
+            break;
+        }
+
         if (i == 0) {
             startLine = 0;
         }
         else { 
-            startLine = stopLine + 1;
+            startLine = stopLine;
         }
         stopLine = int(height / threadsNumber) * (i + 1);
         // Check if the last thread will iterate 
@@ -201,7 +209,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     }
 
     // Once joined, threads will be removed from the vector
-    for (int i = 0; i < threadsNumber; i++) {
+    for (int i = 0; i < m_threads.size(); i++) {
         m_threads[i].join();
     }
 
