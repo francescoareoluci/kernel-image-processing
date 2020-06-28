@@ -2,9 +2,15 @@
 #include "image.h"
 #include <chrono>
 
-#define GAUSSIAN_FILTER_COMMAND         "gaussian";
-#define SHARPENING_FILTER_COMMAND       "sharpen";
-#define EDGE_DETECTION_FILTER_COMMAND   "edge_detect";
+#define GAUSSIAN_FILTER_COMMAND             "gaussian"
+#define SHARPENING_FILTER_COMMAND           "sharpen"
+#define EDGE_DETECTION_FILTER_COMMAND       "edge_detect"
+#define ALT_EDGE_DETECTION_FILTER_COMMAND   "alt_edge_detect"
+
+#define SOURCE_FOLDER   "images/"
+#define IMAGE_EXT       ".png"
+#define IMAGES_NUMBER   16
+#define THREAD_NUMBER   16
 
 enum class FilterType
 {
@@ -26,16 +32,16 @@ int main(int argc, char *argv[])
     }
 
     FilterType filterType;
-    if (std::string(argv[2]) == "gaussian") {
+    if (std::string(argv[2]) == GAUSSIAN_FILTER_COMMAND) {
         filterType = FilterType::GAUSSIAN_FILTER;
     }
-    else if (std::string(argv[2]) == "sharpen") {
+    else if (std::string(argv[2]) == SHARPENING_FILTER_COMMAND) {
         filterType = FilterType::SHARPEN_FILTER;
     }
-    else if (std::string(argv[2]) == "edge_detect") {
+    else if (std::string(argv[2]) == EDGE_DETECTION_FILTER_COMMAND) {
         filterType = FilterType::EDGE_DETECTION;
     }
-    else if (std::string(argv[2]) == "alt_edge_detect") {
+    else if (std::string(argv[2]) == ALT_EDGE_DETECTION_FILTER_COMMAND) {
         filterType = FilterType::ALT_EDGE_DETECTION;
     }
     else {
@@ -44,42 +50,24 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Image* image1 = new Image();
-    Image* image2 = new Image();
-    Image* image3 = new Image();
-    Image* image4 = new Image();
-    Image* image5 = new Image();
-    Image* image6 = new Image();
-    Image* image7 = new Image();
-    Image* image8 = new Image();
-
-    int threadNumber = 8;
-    
-    //image.loadImage(argv[1]);
     std::vector<Image*> images;
-    
-        image1->loadImage("images/1.png");    
-        images.push_back(image1);
-        image2->loadImage("images/2.png");    
-        images.push_back(image2);
-        image3->loadImage("images/3.png");    
-        images.push_back(image3);
-        image4->loadImage("images/4.png");    
-        images.push_back(image4);
-        image5->loadImage("images/5.png");    
-        images.push_back(image5);
-        image6->loadImage("images/6.png");    
-        images.push_back(image6);
-        image7->loadImage("images/7.png");    
-        images.push_back(image7);
-        image8->loadImage("images/8.png");    
-        images.push_back(image8);
+    for (int i = 1; i < IMAGES_NUMBER + 1; i++) {
+        images.push_back(new Image());
+        images[i - 1]->loadImage(std::string(std::string(SOURCE_FOLDER) + 
+                                            std::to_string(i) + 
+                                            std::string(IMAGE_EXT)).c_str());
+    }
+
+    std::cout << images.size() << std::endl;
+    for (int i = 0; i < images.size(); i++) {
+        std::cout << images[i]->getImageWidth() << std::endl;
+    }
 
     Kernel filter = Kernel();
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(55, 55, 2);
+            filter.setGaussianFilter(25, 25, 2);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -102,26 +90,27 @@ int main(int argc, char *argv[])
     filter.printKernel();
 
     Image resultingImage; 
+
+    // Executing multithread filtering for each image
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 8; i++)
-    {
-        images[0]->multithreadFiltering(resultingImage, filter, threadNumber);
-        //images[0]->applyFilter(resultingImage, filter);
+    for (int i = 0; i < IMAGES_NUMBER; i++) {
+        images[i]->multithreadFiltering(resultingImage, filter, THREAD_NUMBER);
     }
     auto t2 = std::chrono::high_resolution_clock::now();
 
+    // Executing non-parallel filtering for each image
     auto t3 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 8; i++)
-    {
-        images[0]->applyFilter(resultingImage, filter);
+    for (int i = 0; i < IMAGES_NUMBER; i++) {
+        images[i]->applyFilter(resultingImage, filter);
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
+    
     auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
     auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>( t4 - t3 ).count();
 
     std::cout << "Multithread Execution time: " << multithreadDuration
-              << " with threads: " << threadNumber << std::endl;
+              << " with threads: " << THREAD_NUMBER << std::endl;
 
     std::cout << "Single thread Execution time: " << singleDuration << std::endl;
 
