@@ -1,8 +1,9 @@
 #include <png++/png.hpp>
 #include "image.h"
 
+
 void threadConv(const MatrixChannels& sourceImage, 
-                int line, 
+                int startLine, int stopLine,
                 MatrixChannels& outImage, 
                 const Matrix& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
@@ -175,23 +176,31 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     MatrixChannels paddedImage = buildPaddedImage(filterHeight, filterWidth);
     MatrixChannels newImage(channels, Matrix(height, Array(width)));
     Matrix mask = kernel.getKernel();
+    int startLine = 0;
+    int stopLine = 0;
 
-    if (!m_threads.empty())
-    {
-        for (int i = 0; i < threadsNumber; i++) {
-            m_threads[i] = (std::thread(threadConv, std::ref(paddedImage), 
-                                    i, std::ref(newImage), std::ref(mask), 
-                                    width, height, channels, filterWidth, filterHeight, threadsNumber));
+    for (int i = 0; i < threadsNumber; i++) {
+        if (i == 0) {
+            startLine = 0;
         }
-    }
-    else {
-        for (int i = 0; i < threadsNumber; i++) {
-            m_threads.push_back(std::thread(threadConv, std::ref(paddedImage), 
-                                    i, std::ref(newImage), std::ref(mask), 
-                                    width, height, channels, filterWidth, filterHeight, threadsNumber));
+        else { 
+            startLine = stopLine + 1;
         }
+        stopLine = int(height / threadsNumber) * (i + 1);
+        // Check if the last thread will iterate 
+        // until the end of the matrix
+        if (i == threadsNumber - 1) {
+            if (stopLine != height) {
+                stopLine = height;
+            }
+        }
+
+        m_threads.push_back(std::thread(threadConv, std::ref(paddedImage), 
+                                startLine, stopLine, std::ref(newImage), std::ref(mask), 
+                                width, height, channels, filterWidth, filterHeight, threadsNumber));
     }
 
+    // Once joined, threads will be removed from the vector
     for (int i = 0; i < threadsNumber; i++) {
         m_threads[i].join();
     }
@@ -199,33 +208,27 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     resultingImage.setImage(newImage);
 
     std::cout << "Done!" << std::endl;
-    //m_threads.clear();
     
     return true;
 }
 
 void threadConv(const MatrixChannels& sourceImage, 
-                int line, 
+                int startLine, int stopLine, 
                 MatrixChannels& outImage, 
                 const Matrix& mask,
                 int width, int height, int channels, int filterWidth, int filterHeight,
                 int threadsNumber)
 {
-    if (line < 0 || line > height)
-    {
-        return;
-    }
+    int hOffset = int(filterHeight / 2) + 1;
+    int wOffset = int(filterWidth / 2) + 1;
 
     // Apply convolution
     for (int d = 0; d < channels; d++) {
-        for (int l = line; l < height; l += threadsNumber) {
-            if (l > height) {
-                break;
-            }
+        for (int l = startLine; l < stopLine; l++) {
             for (int j = 0; j < width; j++) {
                 for (int h = l;  h < l + filterHeight; h++) {
                     for (int w = j; w < j + filterWidth; w++) {
-                        outImage[d][l][j] += mask[h - l][w - j] * sourceImage[d][h + int(filterHeight/2) + 1][w + int(filterWidth/2) + 1];
+                        outImage[d][l][j] += mask[h - l][w - j] * sourceImage[d][h + hOffset][w + wOffset];
                     }
                 }
             }
@@ -238,12 +241,13 @@ MatrixChannels Image::buildPaddedImage(const int paddingHeight,
 {
     int height = this->getImageHeight();
     int width = this->getImageWidth();
+    bool first = true;
     MatrixChannels paddedImage(1, Matrix(height + (paddingHeight * 2) - 1, 
                                         Array(width + (paddingWidth * 2) - 1)));
 
     for (int h = 0; h < paddedImage[0].size(); h++) {
         for (int w = 0; w < paddedImage[0][0].size(); w++) {
-            if ((h < paddingHeight - 1) || (w < paddingWidth - 1) || 
+            if ((h < paddingHeight) || (w < paddingWidth) || 
                 (h > height + paddingHeight - 1) || 
                 (w > width + paddingWidth - 1)) {
                 paddedImage[0][h][w] = 0.0;
