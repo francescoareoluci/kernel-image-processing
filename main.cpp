@@ -10,7 +10,7 @@
 #define SOURCE_FOLDER   "images/"
 #define OUTPUT_FOLDER   "output/"
 #define IMAGE_EXT       ".png"
-#define IMAGES_NUMBER   1
+#define IMAGES_NUMBER   16
 #define THREAD_NUMBER   16
 
 enum class FilterType
@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Getting images from source folder
     std::vector<Image*> images;
     for (int i = 1; i < IMAGES_NUMBER + 1; i++) {
         images.push_back(new Image());
@@ -59,16 +60,11 @@ int main(int argc, char *argv[])
                                             std::string(IMAGE_EXT)).c_str());
     }
 
-    std::cout << images.size() << std::endl;
-    for (int i = 0; i < images.size(); i++) {
-        std::cout << images[i]->getImageWidth() << std::endl;
-    }
-
     Kernel filter = Kernel();
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(5, 5, 2);
+            filter.setGaussianFilter(95, 95, 2);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -100,7 +96,7 @@ int main(int argc, char *argv[])
         images[i]->multithreadFiltering(*resultingMTImages[i], filter, THREAD_NUMBER);
     }
     auto t2 = std::chrono::high_resolution_clock::now();
-
+    
     // Executing non-parallel filtering for each image
     auto t3 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < IMAGES_NUMBER; i++) {
@@ -109,7 +105,7 @@ int main(int argc, char *argv[])
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
-    
+    // Evaluating execution times
     auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
     auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>( t4 - t3 ).count();
 
@@ -118,17 +114,15 @@ int main(int argc, char *argv[])
 
     std::cout << "Single thread Execution time: " << singleDuration << std::endl;
 
+    // Saving resulting images
     for (int i = 0; i < resultingMTImages.size(); i++) {
         resultingMTImages[i]->saveImage(std::string(std::string(OUTPUT_FOLDER) + 
                                         std::to_string(i) + "_" + std::string(argv[2]) +
                                         std::string(IMAGE_EXT)).c_str());
     }
 
-    //filter.setGaussianFilter(5, 5, 5);
-    //images[0]->applyFilter(filter);
-    //filter.setAltEdgeDetectionFilter(3, 3, -4, 1);
-    //images[0]->applyFilter(filter);
-    //images[0]->saveImage("result.png");
+    resultingMTImages.clear();
+    resultingNPImages.clear();
 
     return 0;    
 }
