@@ -40,35 +40,36 @@ int main(int argc, char *argv[])
     int threadsNumber = THREAD_NUMBER;
     int imagesNumber = IMAGES_NUMBER;
     if (argc > 3) {
-        threadsNumber = atoi(argv[3]);
+        threadsNumber = atoi(argv[2]);
         if (threadsNumber <= 0) {
             threadsNumber = THREAD_NUMBER;
         }
 
-        imagesNumber = atoi(argv[4]);
+        imagesNumber = atoi(argv[3]);
         if (imagesNumber <= 0) {
             imagesNumber = IMAGES_NUMBER;
         }
     }
 
     FilterType filterType;
-    if (std::string(argv[2]) == GAUSSIAN_FILTER_COMMAND) {
+    std::string cmdFilter = std::string(argv[1]);
+    if (cmdFilter == GAUSSIAN_FILTER_COMMAND) {
         filterType = FilterType::GAUSSIAN_FILTER;
     }
-    else if (std::string(argv[2]) == SHARPENING_FILTER_COMMAND) {
+    else if (cmdFilter == SHARPENING_FILTER_COMMAND) {
         filterType = FilterType::SHARPEN_FILTER;
     }
-    else if (std::string(argv[2]) == EDGE_DETECTION_FILTER_COMMAND) {
+    else if (cmdFilter == EDGE_DETECTION_FILTER_COMMAND) {
         filterType = FilterType::EDGE_DETECTION;
     }
-    else if (std::string(argv[2]) == LAPLACIAN_FILTER_COMMAND) {
+    else if (cmdFilter == LAPLACIAN_FILTER_COMMAND) {
         filterType = FilterType::LAPLACIAN_FILTER;
     }
-    else if (std::string(argv[2]) == GAUSSIAN_LAPLACIAN_COMMAND) {
+    else if (cmdFilter == GAUSSIAN_LAPLACIAN_COMMAND) {
         filterType = FilterType::GAUSSIAN_LAPLACIAN_FILTER;
     }
     else {
-        std::cerr << "Invalid filter type " << argv[2] << std::endl;
+        std::cerr << "Invalid filter type " << cmdFilter << std::endl;
         std::cerr << "filter_type: <gaussian | sharpen | edge_detect | laplacian | gaussian_laplacian >" << std::endl;
         return 1;
     }
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(105, 105, 1);
+            filter.setGaussianFilter(5, 5, 1);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
     // Saving resulting images
     for (int i = 0; i < resultingMTImages.size(); i++) {
         resultingMTImages[i]->saveImage(std::string(std::string(OUTPUT_FOLDER) + 
-                                        std::to_string(i + 1) + "_" + std::string(argv[2]) +
+                                        std::to_string(i + 1) + "_" + cmdFilter +
                                         std::string(IMAGE_EXT)).c_str());
     }
 
