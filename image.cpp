@@ -3,9 +3,9 @@
 #include "image.h"
 
 
-void threadConv(const int* sourceImage, 
+void threadConv(const double* sourceImage, 
                 int startLine, int stopLine,
-                std::vector<int>& outImage, 
+                std::vector<double>& outImage, 
                 const double* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight);
@@ -31,7 +31,7 @@ int Image::getImageChannels() const
     return 1;
 }
 
-bool Image::setImage(const std::vector<int>& source, int width, int height)
+bool Image::setImage(const std::vector<double>& source, int width, int height)
 {
     this->m_image = source;
     this->m_imageWidth = width;
@@ -40,7 +40,7 @@ bool Image::setImage(const std::vector<int>& source, int width, int height)
     return true;
 }
 
-std::vector<int> Image::getImage() const
+std::vector<double> Image::getImage() const
 {
     return this->m_image;
 }
@@ -53,7 +53,7 @@ bool Image::loadImage(const char *filename)
     // Build matrix from image    
     m_imageHeight = image.get_height();
     m_imageWidth = image.get_width();
-    std::vector<int> imageMatrix(m_imageHeight * m_imageWidth);
+    std::vector<double> imageMatrix(m_imageHeight * m_imageWidth);
     
     for (int h = 0; h < image.get_height(); h++) {
         for (int w = 0; w < image.get_width(); w++) {
@@ -93,7 +93,7 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
 {
     std::cout << "Applying filter to image" << std::endl;
 
-    std::vector<int> newImage = applyFilterCommon(kernel);
+    std::vector<double> newImage = applyFilterCommon(kernel);
 
     resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
     std::cout << "Done!" << std::endl;
@@ -107,7 +107,7 @@ bool Image::applyFilter(const Kernel& kernel)
 {
     std::cout << "Applying filter to image" << std::endl;
     
-    std::vector<int> newImage = applyFilterCommon(kernel);
+    std::vector<double> newImage = applyFilterCommon(kernel);
     if (newImage.empty()) {
         return false;
     }
@@ -121,7 +121,7 @@ bool Image::applyFilter(const Kernel& kernel)
     return true;
 }
 
-std::vector<int> Image::applyFilterCommon(const Kernel& kernel) const
+std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
 {
     // Get image dimensions
     int channels = this->getImageChannels();
@@ -135,24 +135,24 @@ std::vector<int> Image::applyFilterCommon(const Kernel& kernel) const
     // Checking image channels and kernel size
     if (channels != 1) {
         std::cerr << "Invalid number of image's channels" << std::endl;
-        return std::vector<int>();
+        return std::vector<double>();
     }
 
     if (filterHeight == 0 || filterWidth == 0) {
         std::cerr << "Invalid filter dimension" << std::endl;
-        return std::vector<int>();
+        return std::vector<double>();
     }
 
     // Input padding w.r.t. filter size
-    std::vector<int> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
-    std::vector<int> newImage(height * width);
+    std::vector<double> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
+    std::vector<double> newImage(height * width);
 
     // Get kernel matrix
     std::vector<double> mask = kernel.getKernel();
 
     // Use pointers to speed up pixels access
     const double* maskPtr = {mask.data()};
-    const int* paddedImagePtr = {paddedImage.data()};
+    const double* paddedImagePtr = {paddedImage.data()};
 
     int paddedWidth = width + floor(filterWidth / 2) * 2;
     int pixelSum = 0;
@@ -207,15 +207,15 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     int filterWidth = kernel.getKernelWidth();
 
     // Input padding w.r.t. filter size
-    std::vector<int> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
-    std::vector<int> newImage(height * width);
+    std::vector<double> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
+    std::vector<double> newImage(height * width);
 
     // Get kernel matrix
     std::vector<double> mask = kernel.getKernel();
 
     // Use pointers to speed up pixels access
     const double* maskPtr = {mask.data()};
-    const int* paddedImagePtr = {paddedImage.data()};
+    const double* paddedImagePtr = {paddedImage.data()};
     
     int startLine = 0;
     int stopLine = 0;
@@ -266,9 +266,9 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     return true;
 }
 
-void threadConv(const int* sourceImage, 
+void threadConv(const double* sourceImage, 
                 int startLine, int stopLine, 
-                std::vector<int>& outImage, 
+                std::vector<double>& outImage, 
                 const double* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight)
@@ -306,7 +306,7 @@ void threadConv(const int* sourceImage,
     }
 }
 
-std::vector<int> Image::buildReplicatePaddedImage(const int paddingHeight,
+std::vector<double> Image::buildReplicatePaddedImage(const int paddingHeight,
                                                     const int paddingWidth) const
 {
     int height = this->getImageHeight();
@@ -318,8 +318,8 @@ std::vector<int> Image::buildReplicatePaddedImage(const int paddingHeight,
     int maxWImageBoundary = width - 1;
     int paddedImageRowIndex = 0;
 
-    std::vector<int> paddedImage(paddedHeight * paddedWidth);
-    std::vector<int> sourceImage = this->m_image;
+    std::vector<double> paddedImage(paddedHeight * paddedWidth);
+    std::vector<double> sourceImage = this->m_image;
 
     for (int h = 0; h < paddedHeight; h++) {
         paddedImageRowIndex = h * paddedWidth;
@@ -363,7 +363,7 @@ std::vector<int> Image::buildReplicatePaddedImage(const int paddingHeight,
     return paddedImage;
 }
 
-std::vector<int> Image::buildZeroPaddingImage(const int paddingHeight,
+std::vector<double> Image::buildZeroPaddingImage(const int paddingHeight,
                                                 const int paddingWidth) const
 {
     int height = this->getImageHeight();
@@ -375,8 +375,8 @@ std::vector<int> Image::buildZeroPaddingImage(const int paddingHeight,
     int maxWImageBoundary = width + paddingWidth - 1;
     int paddedImageRowIndex = 0;
 
-    std::vector<int> paddedImage(paddedHeight * paddedWidth);
-    std::vector<int> sourceImage = this->m_image;
+    std::vector<double> paddedImage(paddedHeight * paddedWidth);
+    std::vector<double> sourceImage = this->m_image;
 
     for (int h = 0; h < paddedHeight; h++) {
         paddedImageRowIndex = h * paddedWidth;

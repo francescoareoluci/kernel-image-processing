@@ -74,7 +74,7 @@ class Kernel
 
     private:
         /*
-         * @brief: A common method to build the kernel
+         * @brief: A common method used to build a kernel
          */
         bool buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width);
 
