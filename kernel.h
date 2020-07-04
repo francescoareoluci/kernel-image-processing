@@ -32,35 +32,30 @@ class Kernel
         /*
          * @brief: Set up the Kernel object as a sharpener filter
          * 
-         * @param: height: integer height of the filter
-         * @param: width: integer width of the filter
-         * @param: max: max value of the filter
-         * @param: min: min value of the filter
          * @return: true for successful setup, false otherwise
          */
-        bool setSharpenFilter(int height, int width, int max, int min);
+        bool setSharpenFilter();
 
         /*
          * @brief: Set up the Kernel object as an edge detector filter
          * 
-         * @param: height: integer height of the filter
-         * @param: width: integer width of the filter
-         * @param: max: max value of the filter
-         * @param: min: min value of the filter
          * @return: true for successful setup, false otherwise
          */
-        bool setEdgeDetectionFilter(int height, int width, int max, int min);
+        bool setEdgeDetectionFilter();
 
         /*
-         * @brief: Set up the Kernel object as an alternative edge detector filter
+         * @brief: Set up the Kernel object as a Laplacian filter
          * 
-         * @param: height: integer height of the filter
-         * @param: width: integer width of the filter
-         * @param: max: max value of the filter
-         * @param: min: min value of the filter
          * @return: true for successful setup, false otherwise
          */
-        bool setAltEdgeDetectionFilter(int height, int width, int max, int min);
+        bool setLaplacianFilter();
+
+        /*
+         * @brief: Set up the Kernel object as a Gaussian of Laplacian filter
+         * 
+         * @return: true for successful setup, false otherwise
+         */
+        bool setGaussianLaplacianFilter();
 
         /*
          * @brief: return the kernel width
@@ -83,7 +78,7 @@ class Kernel
          */
         bool buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width);
 
-        std::vector<double> m_filterMatrix;
-        int m_filterWidth;
-        int m_filterHeight;
+        std::vector<double> m_filterMatrix;     ///< Linearized matrix containing the kernel 
+        int m_filterWidth;                      ///< Kernel height
+        int m_filterHeight;                     ///< Kernel width
 };

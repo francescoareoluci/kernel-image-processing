@@ -13,7 +13,7 @@ class Image
          */ 
         ~Image() {
             m_image.clear();
-            std::vector<double>().swap(m_image);
+            std::vector<int>().swap(m_image);
         }
 
         /*
@@ -37,14 +37,14 @@ class Image
          * @params: source: the matrix to be set as state
          * @return: true is successfull, false otherwise
          */
-        bool setImage(const std::vector<double>& source, int width, int height);
+        bool setImage(const std::vector<int>& source, int width, int height);
 
         /*
          * @brief: return the matrix state
          * 
          * @return: the matrix state
          */
-        std::vector<double> getImage() const;
+        std::vector<int> getImage() const;
 
         /*
          * @brief: load an image from filename path
@@ -62,7 +62,7 @@ class Image
          */
         bool saveImage(const char *filename) const;
 
-        /*
+        /*o
          * @brief: apply a kernel to the image and pass 
          *         result in resultingImage object
          * 
@@ -88,17 +88,20 @@ class Image
         /*
          * @brief: A common method to apply the kernel to the image
          */
-        std::vector<double> applyFilterCommon(const Kernel& kernel) const;
+        std::vector<int> applyFilterCommon(const Kernel& kernel) const;
 
         /*
          * @brief: return a padded matrix using matrix state 
          *          and requested padding
          */
-        std::vector<double> buildPaddedImage(const int paddingHeight,
-                                        const int paddingWidth) const;
+        std::vector<int> buildReplicatePaddedImage(const int filterHeight,
+                                                    const int filterWidth) const;
 
-        std::vector<double> m_image;
-        int m_imageWidth;
-        int m_imageHeight;
-        std::vector<std::thread> m_threads;
+        std::vector<int> buildZeroPaddingImage(const int paddingHeight,
+                                                const int paddingWidth) const;
+
+        std::vector<int> m_image;               ///< Linearized matrix containing the image pixels' values
+        int m_imageWidth;                       ///< Matrix width
+        int m_imageHeight;                      ///< Matrix height
+        std::vector<std::thread> m_threads;     ///< Vector used to store thread for multithread filtering
 };

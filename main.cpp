@@ -1,24 +1,27 @@
 #include <iostream>
-#include "image.h"
 #include <chrono>
+#include "image.h"
+
 
 #define GAUSSIAN_FILTER_COMMAND             "gaussian"
 #define SHARPENING_FILTER_COMMAND           "sharpen"
 #define EDGE_DETECTION_FILTER_COMMAND       "edge_detect"
-#define ALT_EDGE_DETECTION_FILTER_COMMAND   "alt_edge_detect"
+#define LAPLACIAN_FILTER_COMMAND            "laplacian"
+#define GAUSSIAN_LAPLACIAN_COMMAND          "gaussian_laplacian"
 
 #define SOURCE_FOLDER   "images/"
 #define OUTPUT_FOLDER   "output/"
 #define IMAGE_EXT       ".png"
-#define IMAGES_NUMBER   16
-#define THREAD_NUMBER   16
+#define IMAGES_NUMBER   1
+#define THREAD_NUMBER   4
 
 enum class FilterType
 {
     GAUSSIAN_FILTER,
     SHARPEN_FILTER,
     EDGE_DETECTION,
-    ALT_EDGE_DETECTION
+    LAPLACIAN_FILTER,
+    GAUSSIAN_LAPLACIAN_FILTER
 };
 
 int main(int argc, char *argv[]) 
@@ -42,41 +45,39 @@ int main(int argc, char *argv[])
     else if (std::string(argv[2]) == EDGE_DETECTION_FILTER_COMMAND) {
         filterType = FilterType::EDGE_DETECTION;
     }
-    else if (std::string(argv[2]) == ALT_EDGE_DETECTION_FILTER_COMMAND) {
-        filterType = FilterType::ALT_EDGE_DETECTION;
+    else if (std::string(argv[2]) == LAPLACIAN_FILTER_COMMAND) {
+        filterType = FilterType::LAPLACIAN_FILTER;
+    }
+    else if (std::string(argv[2]) == GAUSSIAN_LAPLACIAN_COMMAND) {
+        filterType = FilterType::GAUSSIAN_LAPLACIAN_FILTER;
     }
     else {
         std::cerr << "Invalid filter type " << argv[2] << std::endl;
-        std::cerr << "filter_type: <gaussian | sharpen | edge_detect | alt_edge_detect>" << std::endl;
+        std::cerr << "filter_type: <gaussian | sharpen | edge_detect | laplacian | gaussian_laplacian >" << std::endl;
         return 1;
-    }
-
-    // Getting images from source folder
-    std::vector<Image*> images;
-    for (int i = 1; i < IMAGES_NUMBER + 1; i++) {
-        images.push_back(new Image());
-        images[i - 1]->loadImage(std::string(std::string(SOURCE_FOLDER) + 
-                                            std::to_string(i) + 
-                                            std::string(IMAGE_EXT)).c_str());
     }
 
     Kernel filter = Kernel();
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(95, 95, 2);
+            filter.setGaussianFilter(105, 105, 1);
             break;
 
         case FilterType::SHARPEN_FILTER:
-            filter.setSharpenFilter(3, 3, 5, -1);
+            filter.setSharpenFilter();
             break;
 
         case FilterType::EDGE_DETECTION:
-            filter.setEdgeDetectionFilter(3, 3, 8, -1);
+            filter.setEdgeDetectionFilter();
             break;
 
-        case FilterType::ALT_EDGE_DETECTION:
-            filter.setAltEdgeDetectionFilter(3, 3, 4, -1);
+        case FilterType::LAPLACIAN_FILTER:
+            filter.setLaplacianFilter();
+            break;
+
+        case FilterType::GAUSSIAN_LAPLACIAN_FILTER:
+            filter.setGaussianLaplacianFilter();
             break;
 
         default:
@@ -86,6 +87,15 @@ int main(int argc, char *argv[])
     }
     filter.printKernel();
 
+    // Getting images from source folder
+    std::vector<Image*> images;
+    for (int i = 1; i < IMAGES_NUMBER + 1; i++) {
+        images.push_back(new Image());
+        images[i - 1]->loadImage(std::string(std::string(SOURCE_FOLDER) + 
+                                            std::to_string(i) + 
+                                            std::string(IMAGE_EXT)).c_str());
+    }
+    
     std::vector<Image*> resultingMTImages;
     std::vector<Image*> resultingNPImages;
 
@@ -117,10 +127,17 @@ int main(int argc, char *argv[])
     // Saving resulting images
     for (int i = 0; i < resultingMTImages.size(); i++) {
         resultingMTImages[i]->saveImage(std::string(std::string(OUTPUT_FOLDER) + 
-                                        std::to_string(i) + "_" + std::string(argv[2]) +
+                                        std::to_string(i + 1) + "_" + std::string(argv[2]) +
                                         std::string(IMAGE_EXT)).c_str());
     }
 
+    for (int i = 0; i < images.size(); i++) {
+        delete images[i];
+        delete resultingMTImages[i];
+        delete resultingNPImages[i];
+    } 
+
+    images.clear();
     resultingMTImages.clear();
     resultingNPImages.clear();
 
