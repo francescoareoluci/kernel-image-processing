@@ -39,12 +39,14 @@ int main(int argc, char *argv[])
 
     int threadsNumber = THREAD_NUMBER;
     int imagesNumber = IMAGES_NUMBER;
-    if (argc > 3) {
+    if (argc > 2) {
         threadsNumber = atoi(argv[2]);
         if (threadsNumber <= 0) {
             threadsNumber = THREAD_NUMBER;
         }
+    }
 
+    if (argc > 3) {
         imagesNumber = atoi(argv[3]);
         if (imagesNumber <= 0) {
             imagesNumber = IMAGES_NUMBER;
@@ -78,7 +80,7 @@ int main(int argc, char *argv[])
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(5, 5, 1);
+            filter.setGaussianFilter(7, 7, 1);
             break;
 
         case FilterType::SHARPEN_FILTER:

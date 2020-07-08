@@ -155,6 +155,7 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
     const double* paddedImagePtr = {paddedImage.data()};
 
     int paddedWidth = width + floor(filterWidth / 2) * 2;
+    int s = floor(filterWidth/2);
     int pixelSum = 0;
 
     int filterRowIndex = 0;
@@ -162,17 +163,16 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
     int sourceImgLineIndex = 0;
     int outImgRowIndex = 0;
 
-
     // Apply convolution
     for (int d = 0; d < channels; d++) {
-        for (int i = 0; i < height; i++) {
-            outImgRowIndex = i * width;
-            for (int j = 0; j < width; j++) {
-                for (int h = 0;  h < filterHeight; h++) {
-                    filterRowIndex = h * filterWidth;
+        for (int i = s; i < height + s; i++) {
+            outImgRowIndex = (i - s) * width;
+            for (int j = s; j < width + s; j++) {
+                for (int h = -s;  h <= s; h++) {
+                    filterRowIndex = (h + s) * filterWidth;
                     sourceImgRowIndex = (h + i) * paddedWidth;
-                    for (int w = 0; w < filterWidth; w++) {
-                        pixelSum += maskPtr[w + filterRowIndex] * 
+                    for (int w = -s; w <= s; w++) {
+                        pixelSum += maskPtr[(w + s) + filterRowIndex] * 
                                         paddedImagePtr[w + j + sourceImgRowIndex];
                     }
                 }
@@ -182,7 +182,7 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
                 else if (pixelSum > 255) {
                     pixelSum = 255;
                 }
-                newImage[j + outImgRowIndex] = pixelSum;
+                newImage[(j - s) + outImgRowIndex] = pixelSum;
                 pixelSum = 0;
             }
         }
@@ -274,6 +274,7 @@ void threadConv(const double* sourceImage,
                 int filterWidth, int filterHeight)
 {
     int paddedWidth = width + floor(filterWidth / 2) * 2;
+    int s = floor(filterWidth/2);
     int pixelSum = 0;
 
     int filterRowIndex = 0;
@@ -282,14 +283,14 @@ void threadConv(const double* sourceImage,
 
     // Apply convolution
     for (int d = 0; d < channels; d++) {
-        for (int l = startLine; l < stopLine; l++) {
-            outImgRowIndex = l * width;
-            for (int j = 0; j < width; j++) {
-                for (int h = 0; h < filterHeight; h++) {
-                    filterRowIndex = h * filterWidth;
+        for (int l = startLine + s; l < stopLine + s; l++) {
+            outImgRowIndex = (l - s) * width;
+            for (int j = s; j < width + s; j++) {
+                for (int h = -s; h <= s; h++) {
+                    filterRowIndex = (h + s) * filterWidth;
                     sourceImgRowIndex = (h + l) * paddedWidth;
-                    for (int w = 0; w < filterWidth; w++) {
-                        pixelSum += mask[w + filterRowIndex] * 
+                    for (int w = -s; w <= s; w++) {
+                        pixelSum += mask[(w + s) + filterRowIndex] * 
                                         sourceImage[w + j + sourceImgRowIndex];
                     }
                 }
@@ -299,7 +300,7 @@ void threadConv(const double* sourceImage,
                 else if (pixelSum > 255) {
                     pixelSum = 255;
                 }
-                outImage[j + outImgRowIndex] = pixelSum;
+                outImage[(j - s) + outImgRowIndex] = pixelSum;
                 pixelSum = 0;
             }
         }
