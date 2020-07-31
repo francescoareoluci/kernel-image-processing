@@ -57,12 +57,13 @@ bool Kernel::setGaussianFilter(const int height, const int width, const double s
     std::vector<double> kernel(width * height);
     double sum = 0.0;
 
-    int middleHeight = int(height / 2);
-    int middleWidth = int(width / 2);
+    int middleHeight = static_cast<int>(height / 2);
+    int middleWidth = static_cast<int>(width / 2);
 
     for (int i = -middleHeight; i <= middleHeight; i++) {
         for (int j = -middleWidth; j <= middleWidth; j++) {
-            double cellValue = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / (2 * M_PI * stdDev * stdDev);
+            double cellValue = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / 
+                                (2 * M_PI * stdDev * stdDev);
             kernel[(j + middleWidth) + ( i + middleHeight) * width] = cellValue;
             sum += cellValue;
         }
@@ -160,7 +161,8 @@ bool Kernel::buildKernelCommon(std::vector<double> &kernel, int max, int min, in
 {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            if ((i == int(height / 2)) && (j == int(width / 2))) {
+            if ((i == static_cast<int>(height / 2)) && 
+                    (j == static_cast<int>(width / 2))) {
                 kernel[j + i * width] = max;
             }
             else {
