@@ -164,6 +164,7 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
     int outImgRowIndex = 0;
 
     // Apply convolution
+    auto t1 = std::chrono::high_resolution_clock::now();
     for (int d = 0; d < channels; d++) {
         for (int i = s; i < height + s; i++) {
             outImgRowIndex = (i - s) * width;
@@ -187,6 +188,10 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
             }
         }
     }
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Sequential filtering took: " << singleDuration << std::endl;
+
     paddedImage.clear();
     mask.clear();
     
@@ -220,6 +225,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     int startLine = 0;
     int stopLine = 0;
 
+    auto t1 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < threadsNumber; i++) {
         // If more thread than images row are requested
         if (i > height) {
@@ -254,6 +260,9 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     for (int i = 0; i < m_threads.size(); i++) {
         m_threads[i].join();
     }
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Multithread filtering took: " << singleDuration << std::endl;
 
     resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
 

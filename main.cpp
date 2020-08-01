@@ -29,27 +29,20 @@ int main(int argc, char *argv[])
     std::cout << "===== Multithread kernel convolution =====" << std::endl;
 
     // Check command line parameters
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " filter_type threads_number images_numbers" << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " filter_type image_path threads_number" << std::endl;
         std::cerr << "filter_type: <gaussian | sharpen | edge_detect | alt_edge_detect>" << std::endl;
+        std::cerr << "image_path: specify the image path" << std::endl;
         std::cerr << "(optional) threads_number: number of threads for the parallel run. Default: 4" << std::endl;
-        std::cerr << "(optional) images_number: number of images to be loaded from images/ folder. Default: 1" << std::endl;
         return 1;
     }
 
     int threadsNumber = THREAD_NUMBER;
     int imagesNumber = IMAGES_NUMBER;
-    if (argc > 2) {
-        threadsNumber = atoi(argv[2]);
+    if (argc > 3) {
+        threadsNumber = atoi(argv[3]);
         if (threadsNumber <= 0) {
             threadsNumber = THREAD_NUMBER;
-        }
-    }
-
-    if (argc > 3) {
-        imagesNumber = atoi(argv[3]);
-        if (imagesNumber <= 0) {
-            imagesNumber = IMAGES_NUMBER;
         }
     }
 
@@ -108,12 +101,8 @@ int main(int argc, char *argv[])
 
     // Getting images from source folder
     std::vector<Image*> images;
-    for (int i = 1; i < imagesNumber + 1; i++) {
-        images.push_back(new Image());
-        images[i - 1]->loadImage(std::string(std::string(SOURCE_FOLDER) + 
-                                            std::to_string(i) + 
-                                            std::string(IMAGE_EXT)).c_str());
-    }
+    images.push_back(new Image());
+    images[0]->loadImage(argv[2]);
     
     std::vector<Image*> resultingMTImages;
     std::vector<Image*> resultingNPImages;
