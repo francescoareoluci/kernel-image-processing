@@ -5,7 +5,7 @@
 
 void threadConv(const double* sourceImage, 
                 int startLine, int stopLine,
-                std::vector<double>& outImage, 
+                double* outImage, 
                 const double* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight);
@@ -156,7 +156,7 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
 
     int paddedWidth = width + floor(filterWidth / 2) * 2;
     int s = floor(filterWidth/2);
-    int pixelSum = 0;
+    float pixelSum = 0;
 
     int filterRowIndex = 0;
     int sourceImgRowIndex = 0;
@@ -221,6 +221,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     // Use pointers to speed up pixels access
     const double* maskPtr = {mask.data()};
     const double* paddedImagePtr = {paddedImage.data()};
+    double* outImagePtr = {newImage.data()};
     
     int startLine = 0;
     int stopLine = 0;
@@ -252,7 +253,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
         // Create threads and assign to them 
         // the threadConv function
         m_threads.push_back(std::thread(threadConv, paddedImagePtr, 
-                                startLine, stopLine, std::ref(newImage), maskPtr, 
+                                startLine, stopLine, outImagePtr, maskPtr, 
                                 width, height, channels, filterWidth, filterHeight));          
     }
 
@@ -277,14 +278,14 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
 
 void threadConv(const double* sourceImage, 
                 int startLine, int stopLine, 
-                std::vector<double>& outImage, 
+                double* outImage, 
                 const double* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight)
 {
     int paddedWidth = width + floor(filterWidth / 2) * 2;
     int s = floor(filterWidth/2);
-    int pixelSum = 0;
+    double pixelSum = 0;
 
     int filterRowIndex = 0;
     int sourceImgRowIndex = 0;

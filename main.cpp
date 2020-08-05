@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(7, 7, 1);
+            filter.setGaussianFilter(15, 15, 1);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // Evaluating execution times
-    auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
-    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>( t4 - t3 ).count();
+    auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
 
     std::cout << "Multithread Execution time: " << multithreadDuration
               << " with threads: " << threadsNumber << std::endl;
