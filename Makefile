@@ -1,11 +1,11 @@
 #
 # Macros
 #
-IMG_LDFLAG	= -lpng -lpthread
+IMG_LDFLAG	= -lpng -pthread
 LDFLAGS 	= $(IMG_LDFLAG) -lm
 
 CC		= g++
-CFLAGS		= -Wall -std=c++11
+CFLAGS		= -O2 -Wall -std=c++11
 
 CPP_SRCS	= kernel.cpp \
 		  image.cpp \
@@ -36,16 +36,6 @@ all: $(TARGET)
 #
 $(TARGET) : $(CPP_OBJS) 
 	$(CC) -o $@ $(CPP_OBJS) $(LDFLAGS)
-
-#
-# Generating and including dependencies
-#
-depend: $(DEP_FILE)
-$(DEP_FILE) : $(CPP_DEPS) $(CU_DEPS)
-	cat $(CPP_DEPS) $(CU_DEPS) > $(DEP_FILE)
-ifeq ($(wildcard $(DEP_FILE)),$(DEP_FILE))
-include $(DEP_FILE)
-endif
 
 #
 # Cleaning the files
