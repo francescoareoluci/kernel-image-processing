@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     switch (filterType)
     {
         case FilterType::GAUSSIAN_FILTER:
-            filter.setGaussianFilter(15, 15, 1);
+            filter.setGaussianFilter(7, 7, 1);
             break;
 
         case FilterType::SHARPEN_FILTER:
@@ -115,6 +115,8 @@ int main(int argc, char *argv[])
     }
     auto t2 = std::chrono::high_resolution_clock::now();
     
+    std::cout << std::endl;
+
     // Executing non-parallel filtering for each image
     auto t3 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < imagesNumber; i++) {
@@ -122,6 +124,8 @@ int main(int argc, char *argv[])
         images[i]->applyFilter(*resultingNPImages[i], filter);
     }
     auto t4 = std::chrono::high_resolution_clock::now();
+
+    std::cout << std::endl;
 
     // Evaluating execution times
     auto multithreadDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
@@ -133,13 +137,13 @@ int main(int argc, char *argv[])
     std::cout << "Single thread Execution time: " << singleDuration << std::endl;
 
     // Saving resulting images
-    for (int i = 0; i < resultingMTImages.size(); i++) {
+    for (unsigned int i = 0; i < resultingMTImages.size(); i++) {
         resultingMTImages[i]->saveImage(std::string(std::string(OUTPUT_FOLDER) + 
                                         std::to_string(i + 1) + "_" + cmdFilter +
                                         std::string(IMAGE_EXT)).c_str());
     }
 
-    for (int i = 0; i < images.size(); i++) {
+    for (unsigned int i = 0; i < images.size(); i++) {
         delete images[i];
         delete resultingMTImages[i];
         delete resultingNPImages[i];

@@ -11,7 +11,7 @@ class Kernel
          */ 
         ~Kernel() {
             m_filterMatrix.clear();
-            std::vector<double>().swap(m_filterMatrix);
+            std::vector<float>().swap(m_filterMatrix);
         }
 
         /*
@@ -27,7 +27,7 @@ class Kernel
          * @param: stdDev: standard deviation
          * @return: true for successful setup, false otherwise
          */
-        bool setGaussianFilter(const int height, const int width, const double stdDev);
+        bool setGaussianFilter(const int height, const int width, const float stdDev);
 
         /*
          * @brief: Set up the Kernel object as a sharpener filter
@@ -70,15 +70,15 @@ class Kernel
         /*
          * @brief: return the kernel as a matrix
          */
-        std::vector<double> getKernel() const;
+        std::vector<float> getKernel() const;
 
     private:
         /*
          * @brief: A common method used to build a kernel
          */
-        bool buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width);
+        bool buildKernelCommon(std::vector<float> &kernel, int max, int min, int height, int width);
 
-        std::vector<double> m_filterMatrix;     ///< Linearized matrix containing the kernel 
+        std::vector<float> m_filterMatrix;     ///< Linearized matrix containing the kernel 
         int m_filterWidth;                      ///< Kernel height
         int m_filterHeight;                     ///< Kernel width
 };

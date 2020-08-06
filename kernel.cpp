@@ -36,7 +36,7 @@ void Kernel::printKernel() const
     std::cout << std::endl;
 }
 
-bool Kernel::setGaussianFilter(const int height, const int width, const double stdDev)
+bool Kernel::setGaussianFilter(const int height, const int width, const float stdDev)
 {
     std::cout << "Building gaussian filter..." << std::endl;
 
@@ -54,15 +54,15 @@ bool Kernel::setGaussianFilter(const int height, const int width, const double s
         return false;
     }
 
-    std::vector<double> kernel(width * height);
-    double sum = 0.0;
+    std::vector<float> kernel(width * height);
+    float sum = 0.0;
 
     int middleHeight = static_cast<int>(height / 2);
     int middleWidth = static_cast<int>(width / 2);
 
     for (int i = -middleHeight; i <= middleHeight; i++) {
         for (int j = -middleWidth; j <= middleWidth; j++) {
-            double cellValue = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / 
+            float cellValue = exp(- (i * i + j * j) / (2 * stdDev * stdDev)) / 
                                 (2 * M_PI * stdDev * stdDev);
             kernel[(j + middleWidth) + ( i + middleHeight) * width] = cellValue;
             sum += cellValue;
@@ -84,7 +84,7 @@ bool Kernel::setGaussianFilter(const int height, const int width, const double s
 
 bool Kernel::setSharpenFilter()
 {
-    std::vector<double> kernel(3 * 3);
+    std::vector<float> kernel(3 * 3);
     this->buildKernelCommon(kernel, SHARPEN_FILTER_MAX, SHARPEN_FILTER_MIN, 3, 3);
 
     kernel[0] = 0.0;
@@ -101,7 +101,7 @@ bool Kernel::setSharpenFilter()
 
 bool Kernel::setEdgeDetectionFilter()
 {
-    std::vector<double> kernel(3 * 3);
+    std::vector<float> kernel(3 * 3);
     this->buildKernelCommon(kernel, LINE_DETECTOR_MAX, LINE_DETECTOR_MIN, 3, 3);
 
     m_filterMatrix = kernel;
@@ -113,7 +113,7 @@ bool Kernel::setEdgeDetectionFilter()
 
 bool Kernel::setLaplacianFilter()
 {
-    std::vector<double> kernel(3 * 3);
+    std::vector<float> kernel(3 * 3);
     this->buildKernelCommon(kernel, LAPLACIAN_FILTER_MAX, LAPLACIAN_FILTER_MIN, 3, 3);
 
     kernel[0] = 0.0;
@@ -130,7 +130,7 @@ bool Kernel::setLaplacianFilter()
 
 bool Kernel::setGaussianLaplacianFilter()
 {
-    std::vector<double> kernel(5 * 5);
+    std::vector<float> kernel(5 * 5);
 
     int max = 16;
     int min = -2;
@@ -157,7 +157,7 @@ bool Kernel::setGaussianLaplacianFilter()
     return true;
 }
 
-bool Kernel::buildKernelCommon(std::vector<double> &kernel, int max, int min, int height, int width)
+bool Kernel::buildKernelCommon(std::vector<float> &kernel, int max, int min, int height, int width)
 {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -184,7 +184,7 @@ int Kernel::getKernelHeight() const
     return m_filterHeight;
 }
 
-std::vector<double> Kernel::getKernel() const
+std::vector<float> Kernel::getKernel() const
 {
     return this->m_filterMatrix;
 }

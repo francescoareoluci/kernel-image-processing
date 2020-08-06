@@ -3,10 +3,10 @@
 #include "image.h"
 
 
-void threadConv(const double* sourceImage, 
+void threadConv(const float* sourceImage, 
                 int startLine, int stopLine,
-                double* outImage, 
-                const double* mask,
+                float* outImage, 
+                const float* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight);
 
@@ -31,7 +31,7 @@ int Image::getImageChannels() const
     return 1;
 }
 
-bool Image::setImage(const std::vector<double>& source, int width, int height)
+bool Image::setImage(const std::vector<float>& source, int width, int height)
 {
     this->m_image = source;
     this->m_imageWidth = width;
@@ -40,7 +40,7 @@ bool Image::setImage(const std::vector<double>& source, int width, int height)
     return true;
 }
 
-std::vector<double> Image::getImage() const
+std::vector<float> Image::getImage() const
 {
     return this->m_image;
 }
@@ -53,10 +53,10 @@ bool Image::loadImage(const char *filename)
     // Build matrix from image    
     m_imageHeight = image.get_height();
     m_imageWidth = image.get_width();
-    std::vector<double> imageMatrix(m_imageHeight * m_imageWidth);
+    std::vector<float> imageMatrix(m_imageHeight * m_imageWidth);
     
-    for (int h = 0; h < image.get_height(); h++) {
-        for (int w = 0; w < image.get_width(); w++) {
+    for (unsigned int h = 0; h < image.get_height(); h++) {
+        for (unsigned int w = 0; w < image.get_width(); w++) {
             imageMatrix[w + h * m_imageWidth] = image[h][w];
             //imageMatrix[1][h][w] = image[h][w].green;
             //imageMatrix[2][h][w] = image[h][w].blue;
@@ -93,7 +93,7 @@ bool Image::applyFilter(Image& resultingImage, const Kernel& kernel) const
 {
     std::cout << "Applying filter to image" << std::endl;
 
-    std::vector<double> newImage = applyFilterCommon(kernel);
+    std::vector<float> newImage = applyFilterCommon(kernel);
 
     resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
     std::cout << "Done!" << std::endl;
@@ -107,7 +107,7 @@ bool Image::applyFilter(const Kernel& kernel)
 {
     std::cout << "Applying filter to image" << std::endl;
     
-    std::vector<double> newImage = applyFilterCommon(kernel);
+    std::vector<float> newImage = applyFilterCommon(kernel);
     if (newImage.empty()) {
         return false;
     }
@@ -121,7 +121,7 @@ bool Image::applyFilter(const Kernel& kernel)
     return true;
 }
 
-std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
+std::vector<float> Image::applyFilterCommon(const Kernel& kernel) const
 {
     // Get image dimensions
     int channels = this->getImageChannels();
@@ -135,36 +135,40 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
     // Checking image channels and kernel size
     if (channels != 1) {
         std::cerr << "Invalid number of image's channels" << std::endl;
-        return std::vector<double>();
+        return std::vector<float>();
     }
 
     if (filterHeight == 0 || filterWidth == 0) {
         std::cerr << "Invalid filter dimension" << std::endl;
-        return std::vector<double>();
+        return std::vector<float>();
     }
 
     // Input padding w.r.t. filter size
-    std::vector<double> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
-    std::vector<double> newImage(height * width);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    std::vector<float> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto paddingDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Padding Execution time: " << paddingDuration << " μs" << std::endl;
+    
+    std::vector<float> newImage(height * width);
 
     // Get kernel matrix
-    std::vector<double> mask = kernel.getKernel();
+    std::vector<float> mask = kernel.getKernel();
 
     // Use pointers to speed up pixels access
-    const double* maskPtr = {mask.data()};
-    const double* paddedImagePtr = {paddedImage.data()};
+    const float* maskPtr = {mask.data()};
+    const float* paddedImagePtr = {paddedImage.data()};
 
     int paddedWidth = width + floor(filterWidth / 2) * 2;
-    int s = floor(filterWidth/2);
+    int s = floor(filterWidth / 2);
     float pixelSum = 0;
 
     int filterRowIndex = 0;
     int sourceImgRowIndex = 0;
-    int sourceImgLineIndex = 0;
     int outImgRowIndex = 0;
 
     // Apply convolution
-    auto t1 = std::chrono::high_resolution_clock::now();
+    t1 = std::chrono::high_resolution_clock::now();
     for (int d = 0; d < channels; d++) {
         for (int i = s; i < height + s; i++) {
             outImgRowIndex = (i - s) * width;
@@ -188,9 +192,9 @@ std::vector<double> Image::applyFilterCommon(const Kernel& kernel) const
             }
         }
     }
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-    std::cout << "Sequential filtering took: " << singleDuration << std::endl;
+    t2 = std::chrono::high_resolution_clock::now();
+    auto filterDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Sequential filtering execution time: " << filterDuration << " μs" << std::endl;
 
     paddedImage.clear();
     mask.clear();
@@ -212,21 +216,26 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     int filterWidth = kernel.getKernelWidth();
 
     // Input padding w.r.t. filter size
-    std::vector<double> paddedImage = buildReplicatePaddedImage(floor(filterHeight/2), floor(filterWidth/2));
-    std::vector<double> newImage(height * width);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    std::vector<float> paddedImage = buildReplicatePaddedImage(floor(filterHeight / 2), floor(filterWidth / 2));
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto paddingDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Padding Execution time: " << paddingDuration << " μs" << std::endl;
+    
+    std::vector<float> newImage(height * width);
 
     // Get kernel matrix
-    std::vector<double> mask = kernel.getKernel();
+    std::vector<float> mask = kernel.getKernel();
 
     // Use pointers to speed up pixels access
-    const double* maskPtr = {mask.data()};
-    const double* paddedImagePtr = {paddedImage.data()};
-    double* outImagePtr = {newImage.data()};
+    const float* maskPtr = {mask.data()};
+    const float* paddedImagePtr = {paddedImage.data()};
+    float* outImagePtr = {newImage.data()};
     
     int startLine = 0;
     int stopLine = 0;
 
-    auto t1 = std::chrono::high_resolution_clock::now();
+    t1 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < threadsNumber; i++) {
         // If more thread than images row are requested
         if (i > height) {
@@ -258,12 +267,12 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     }
 
     // Once joined, threads will be removed from the vector
-    for (int i = 0; i < m_threads.size(); i++) {
+    for (unsigned int i = 0; i < m_threads.size(); i++) {
         m_threads[i].join();
     }
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto singleDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-    std::cout << "Multithread filtering took: " << singleDuration << std::endl;
+    t2 = std::chrono::high_resolution_clock::now();
+    auto filterDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    std::cout << "Multithread filtering execution time: " << filterDuration << " μs" << std::endl;
 
     resultingImage.setImage(newImage, m_imageWidth, m_imageHeight);
 
@@ -276,20 +285,20 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
     return true;
 }
 
-void threadConv(const double* sourceImage, 
+void threadConv(const float* sourceImage, 
                 int startLine, int stopLine, 
-                double* outImage, 
-                const double* mask,
+                float* outImage, 
+                const float* mask,
                 int width, int height, int channels, 
                 int filterWidth, int filterHeight)
 {
     int paddedWidth = width + floor(filterWidth / 2) * 2;
-    int s = floor(filterWidth/2);
-    double pixelSum = 0;
+    int s = floor(filterWidth / 2);
 
     int filterRowIndex = 0;
     int sourceImgRowIndex = 0;
     int outImgRowIndex = 0;
+    float pixelSum = 0.0f;
 
     // Apply convolution
     for (int d = 0; d < channels; d++) {
@@ -317,7 +326,7 @@ void threadConv(const double* sourceImage,
     }
 }
 
-std::vector<double> Image::buildReplicatePaddedImage(const int paddingHeight,
+std::vector<float> Image::buildReplicatePaddedImage(const int paddingHeight,
                                                     const int paddingWidth) const
 {
     int height = this->getImageHeight();
@@ -329,8 +338,8 @@ std::vector<double> Image::buildReplicatePaddedImage(const int paddingHeight,
     int maxWImageBoundary = width - 1;
     int paddedImageRowIndex = 0;
 
-    std::vector<double> paddedImage(paddedHeight * paddedWidth);
-    std::vector<double> sourceImage = this->m_image;
+    std::vector<float> paddedImage(paddedHeight * paddedWidth);
+    std::vector<float> sourceImage = this->m_image;
 
     for (int h = 0; h < paddedHeight; h++) {
         paddedImageRowIndex = h * paddedWidth;
@@ -374,7 +383,7 @@ std::vector<double> Image::buildReplicatePaddedImage(const int paddingHeight,
     return paddedImage;
 }
 
-std::vector<double> Image::buildZeroPaddingImage(const int paddingHeight,
+std::vector<float> Image::buildZeroPaddingImage(const int paddingHeight,
                                                 const int paddingWidth) const
 {
     int height = this->getImageHeight();
@@ -386,8 +395,8 @@ std::vector<double> Image::buildZeroPaddingImage(const int paddingHeight,
     int maxWImageBoundary = width + paddingWidth - 1;
     int paddedImageRowIndex = 0;
 
-    std::vector<double> paddedImage(paddedHeight * paddedWidth);
-    std::vector<double> sourceImage = this->m_image;
+    std::vector<float> paddedImage(paddedHeight * paddedWidth);
+    std::vector<float> sourceImage = this->m_image;
 
     for (int h = 0; h < paddedHeight; h++) {
         paddedImageRowIndex = h * paddedWidth;

@@ -13,7 +13,7 @@ class Image
          */ 
         ~Image() {
             m_image.clear();
-            std::vector<double>().swap(m_image);
+            std::vector<float>().swap(m_image);
         }
 
         /*
@@ -37,14 +37,14 @@ class Image
          * @params: source: the matrix to be set as state
          * @return: true is successfull, false otherwise
          */
-        bool setImage(const std::vector<double>& source, int width, int height);
+        bool setImage(const std::vector<float>& source, int width, int height);
 
         /*
          * @brief: return the matrix state
          * 
          * @return: the matrix state
          */
-        std::vector<double> getImage() const;
+        std::vector<float> getImage() const;
 
         /*
          * @brief: load an image from filename path
@@ -88,23 +88,23 @@ class Image
         /*
          * @brief: A common method to apply the kernel to the image
          */
-        std::vector<double> applyFilterCommon(const Kernel& kernel) const;
+        std::vector<float> applyFilterCommon(const Kernel& kernel) const;
 
         /*
          * @brief: return a border-replicated padded matrix using matrix state 
          *          and requested padding
          */
-        std::vector<double> buildReplicatePaddedImage(const int paddingHeight,
+        std::vector<float> buildReplicatePaddedImage(const int paddingHeight,
                                                     const int paddingWidth) const;
 
         /*
          * @brief: return a zero padded matrix using matrix state 
          *          and requested padding
          */
-        std::vector<double> buildZeroPaddingImage(const int paddingHeight,
+        std::vector<float> buildZeroPaddingImage(const int paddingHeight,
                                                 const int paddingWidth) const;
 
-        std::vector<double> m_image;               ///< Linearized matrix containing the image pixels' values
+        std::vector<float> m_image;               ///< Linearized matrix containing the image pixels' values
         int m_imageWidth;                       ///< Matrix width
         int m_imageHeight;                      ///< Matrix height
         std::vector<std::thread> m_threads;     ///< Vector used to store thread for multithread filtering
