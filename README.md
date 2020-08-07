@@ -17,8 +17,8 @@ Makefile is provided in order to compile the source. To compile, from the root d
 A main controller (main.cpp) has been written to test the developed classes that are used to load images (image.h, images.cpp) and to apply a kernel to them (kernel.h, kernel.cpp). The main file will load image from requested image path and will write output images in output/ folder. It will do the kernel processing on the loaded images two times: the first time it will run a parallel processing with the specified number of threads, the second time it will run a sequential processing. Execution times for the two runs will be printed on the command line.
 To launch the application:
 
-> Usage: ./kernel_convolution filter_type image_path threads_number
-> 	filter_type: <gaussian | sharpen | edge_detect | alt_edge_detect>
-> 	image_path: specify the image path
-> 	(optional) threads_number: number of threads for the parallel run. Default: 4
+Usage: ./kernel_convolution filter_type image_path threads_number
+	filter_type: <gaussian | sharpen | edge_detect | laplacian | gaussian_laplacian>
+ 	image_path: specify the image path
+ 	(optional) threads_number: number of threads for the parallel run. Default: 4
 
