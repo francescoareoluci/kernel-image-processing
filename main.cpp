@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     // Check command line parameters
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " filter_type image_path threads_number" << std::endl;
-        std::cerr << "filter_type: <gaussian | sharpen | edge_detect | alt_edge_detect>" << std::endl;
+        std::cerr << "filter_type: <gaussian | sharpen | edge_detect | laplacian | gaussian_laplacian>" << std::endl;
         std::cerr << "image_path: specify the image path" << std::endl;
         std::cerr << "(optional) threads_number: number of threads for the parallel run. Default: 4" << std::endl;
         return 1;
