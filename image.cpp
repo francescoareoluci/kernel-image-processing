@@ -8,7 +8,7 @@ void threadConv(const float* sourceImage,
                 float* outImage, 
                 const float* mask,
                 int width, int height, int channels, 
-                int filterWidth, int filterHeight);
+                int filterWidth);
 
 Image::Image()
 {
@@ -263,7 +263,7 @@ bool Image::multithreadFiltering(Image& resultingImage, const Kernel& kernel, in
         // the threadConv function
         m_threads.push_back(std::thread(threadConv, paddedImagePtr, 
                                 startLine, stopLine, outImagePtr, maskPtr, 
-                                width, height, channels, filterWidth, filterHeight));          
+                                width, height, channels, filterWidth));          
     }
 
     // Once joined, threads will be removed from the vector
@@ -290,7 +290,7 @@ void threadConv(const float* sourceImage,
                 float* outImage, 
                 const float* mask,
                 int width, int height, int channels, 
-                int filterWidth, int filterHeight)
+                int filterWidth)
 {
     int paddedWidth = width + floor(filterWidth / 2) * 2;
     int s = floor(filterWidth / 2);

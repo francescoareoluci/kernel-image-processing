@@ -9,7 +9,6 @@
 #define LAPLACIAN_FILTER_COMMAND            "laplacian"
 #define GAUSSIAN_LAPLACIAN_COMMAND          "gaussian_laplacian"
 
-#define SOURCE_FOLDER   "images/"
 #define OUTPUT_FOLDER   "output/"
 #define IMAGE_EXT       ".png"
 #define IMAGES_NUMBER   1
